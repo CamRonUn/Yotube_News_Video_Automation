@@ -50,15 +50,31 @@ def authenticate_youtube():
 
     return youtube
 
-def video_upload(video_path, youtube, title: str, description: str, tags: list, tries:int = 0):
+def video_upload(video_path, youtube, title: str, description: str, tags: list, topic, tries:int = 0):
     time.sleep(20)
     total_file_size = os.path.getsize(video_path)
+
+
+    topic1 = "Triathlon"
+    topic2= "swimming"
+    topicx="running"
+    topic3 = "Cycling"
+    topic4 = "Coding and AI"
+    topic5 = "Chineese Technology"
+    topic6= "Travel Deals"
+
+    if topic == topic1 or topic == topic2 or topic == topic3 or topic == topicx:
+        cat = "17"
+    elif topic == topic4 or topic == topic5:
+        cat = "28"
+    else: 
+        cat = "19"
 
     request_body = {
         "snippet": {
             "title": title, 
             "description": description,
-            "categoryId": "17",
+            "categoryId": cat,
             "tags": tags,
             "defaultLanguage": "en"
         },

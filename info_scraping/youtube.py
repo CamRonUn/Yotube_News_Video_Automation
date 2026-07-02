@@ -44,7 +44,7 @@ def getVideos(searchTerm:str, number_of_videos: str = "2"):
         "--write-comments",
         "--write-subs",
         "--write-auto-subs",
-        "-f", "bestvideo[height<=720]+bestaudio/best[height<=720]",
+        "-f", "bestvideo[height<=240]+bestaudio/best[height<=240]",
         "-t", "mp4",
         "--no-part",
         "--live-from-start",

@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 import os
 import json
 import moviepy.config as mpy_config
@@ -36,6 +36,7 @@ today = date.today().strftime("%Y%m%d")
 yesterday = (date.today() - timedelta(days=1)).strftime("%Y%m%d")
 todayAfter = date.today().strftime("%Y-%m-%d")
 yesterdayAfter = (date.today() - timedelta(days=1)).strftime("%Y-%m-%d")
+nowtime = datetime.now()
 
 def sanitize_filename(file_name: str) -> str:
     """Strip emoji and special chars, replace spaces/brackets with underscores."""
@@ -71,52 +72,60 @@ def ffmpeg_trim(file_name: str, start_time: str, end_time: str, mute: bool, scen
             if score > best_score:
                 best_score = score
                 best_match = file.name
-    
-    original_path = Path(video_dir / best_match).resolve()
-    output_path = str((clip_dir / f"scene_{scene}.mp4").resolve())
-    
-    print(f"original path: {original_path}")
-    print(f"original path: {output_path}")
 
-    if mute:
-        strategy = ['ffmpeg', "-y",
-                     "-ss", start_time, 
-                     "-to", end_time,
-                      "-i",  original_path,
-                      "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2",
-                      "-an",
-                      output_path
-                      ]
-    else:
-        strategy = ['ffmpeg', "-y",
-                     "-ss", start_time, 
-                     "-to", end_time,
-                      "-i",  original_path,
-                      "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2",
-                      "-c:a", "aac", "-b:a", "128k",
-                      output_path
-                      ]
+    if best_match:
+        
+        original_path = Path(video_dir / best_match).resolve()
+        output_path = str((clip_dir / f"scene_{scene}.mp4").resolve())
+        
+        print(f"original path: {original_path}")
+        print(f"original path: {output_path}")
 
-    try:
-        result = subprocess.run(
-            strategy,
-            capture_output=True, text=True)
-        print(result.stdout)
-        print(result.stderr)
-        print(f"{scene} trimmed success ✅")
-    except Exception as e:
-        print(f"error: {e}")
-        if tries <= max_retries:
-            ffmpeg_trim(file_name, start_time, end_time, mute, scene, tries + 1)
+        if mute:
+            strategy = ['ffmpeg', "-y",
+                        "-ss", start_time, 
+                        "-to", end_time,
+                        "-i",  original_path,
+                        "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2",
+                        "-an",
+                        output_path
+                        ]
         else:
-            print(f"giving up on {(scene)} ❌")
-    
+            strategy = ['ffmpeg', "-y",
+                        "-ss", start_time, 
+                        "-to", end_time,
+                        "-i",  original_path,
+                        "-vf", "scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2",
+                        "-c:a", "aac", "-b:a", "128k",
+                        output_path
+                        ]
+
+        try:
+            result = subprocess.run(
+                strategy,
+                capture_output=True, text=True)
+            print(result.stdout)
+            print(result.stderr)
+            print(f"{scene} trimmed success ✅")
+        except Exception as e:
+            print(f"error: {e}")
+            if tries <= max_retries:
+                ffmpeg_trim(file_name, start_time, end_time, mute, scene, tries + 1)
+            else:
+                print(f"giving up on {(scene)} ❌")
+    else: 
+        with open(script_dir / "video_script.json", "r+") as file:
+            data = json.load(file)  
+            data[int(scene)-1]['video'] = "x"
+            file.seek(0)  
+            file.truncate()  
+            json.dump(data, file, indent=4)
     
 
 
 def trim_videos():
     with open(script_dir / "video_script.json", "r") as file:
-        data = json.load(file)
+        data = json.load(file)  
     
     failed_scenes = []
     
@@ -213,6 +222,8 @@ def validate_and_repair_scenes():
             test.close()
             print(f"✅ scene_{scene['scene']} OK")
         except Exception as e:
+            if test is not None:
+                test.close()
             print(f"⚠️ scene_{scene['scene']} corrupt ({e}) — re-trimming...")
             with open(script_dir / "video_script.json", "r") as file:
                     data = json.load(file)
@@ -220,6 +231,9 @@ def validate_and_repair_scenes():
             with open(script_dir / "video_script.json", "w") as file:
                 json.dump(data, file, indent=4)
             corrupt.append(scene)
+        finally:
+            if test is not None:
+                test.close()
     
     # Re-trim anything that failed validation
     if corrupt:
@@ -379,7 +393,7 @@ def download_safe_stock_image(search_term: str, sceneNumber:str, topic):
 def generate_search(topic, scene):
         imagesearch = gemma(f"Im making a daily news video on {topic} i need a pexels image to go with the part of my script that says ###{scene['script']} ### output the search term only for theis sction, output no more than 5 words for a pexels stock image search ")
         if "Gemini SDK Error" in imagesearch or "Sorry, I'm having trouble thinking right now. Please try again later." in imagesearch:
-            time.sleep(60)
+            time.sleep(20)
             return generate_search()
         else: 
             return imagesearch
@@ -481,8 +495,11 @@ def final_video_creation(topic):
     filename = f"{topic}_news_{today}"
     with open(script_dir / "video_script.json", "r") as file:
         data = json.load(file)
-        
+    
+    print("\n\n\n save script ✅")
     scenes = []
+    output_file_path = upload_dir / f"{filename}.mp4"
+
     
     try:
         # 1. Load all individual scene clips safely
@@ -490,24 +507,24 @@ def final_video_creation(topic):
             video_path = str((clip_dir / f"scene_{scene['scene']}.mp4").resolve())
             video = VideoFileClip(video_path)
             scenes.append(video)
+        print("\n\n\n compile videos from script ✅ ")
             
         # 2. Stitch the videos together
         final_clip = concatenate_videoclips(scenes, method="compose")
-        
+        print("\n\n\n concat videos ✅")
+
         # 3. Load and set up background music
         audio_path = str((cwd / "background.mp3").resolve())
-        bg_audio = AudioFileClip(audio_path).set_duration(final_clip.duration).volumex(0.2)
-        
+        bg_audio = AudioFileClip(audio_path).set_duration(final_clip.duration).volumex(0.15)
+        print("\n\n\n audio ✅")
         # 4. SAFE AUDIO CHECK: Handle scenes that might be totally silent
         audio_layers = [bg_audio]
         if final_clip.audio is not None:
             audio_layers.append(final_clip.audio)
-            
+        print("\n\n\n handle silent ✅")
         final_audio = CompositeAudioClip(audio_layers)
         final_clip.audio = final_audio
-        
-        # 5. FIXED PATH: Explicitly define the target file name inside the upload directory
-        output_file_path = upload_dir / f"{filename}.mp4"
+        print("\n\n\n final audio ✅")
         
         # 6. Render the final output
         final_clip.write_videofile(
@@ -516,21 +533,40 @@ def final_video_creation(topic):
             codec="libx264",
             audio_codec="aac"
         )
-        
+        print("\n\n\n write video ✅")
         # Close the master composition layout
         final_clip.close()
         bg_audio.close()
+        print("\n\n\n close audio ✅")
         #move the script file
         script_path = cwd / "script/video_script.json"
         script_path.rename(upload_dir / f"{topic}_script_{today}.json")
         print("🎉 Full compilation successful!")
+        print("\n\n\n move script ✅")
 
+    except Exception as e:
+        videolengths = ""
+        for video in video_dir.iterdir():
+            if video.suffix == ".mp4":
+                try:
+                    with VideoFileClip(str(video.resolve())) as v_clip:
+                        videolengths += f"\n video: {video.name}, duration: {v_clip.duration}"
+                except Exception:
+                    videolengths += f"\n video: {video.name}, duration: unknown/unreadable"
+        with open(upload_dir / f"{nowtime}_final_video_error.txt", "w") as File:
+            File.write(f"error: {e} \n\n video lengths {videolengths} \n \n script: {data} ")
+        print(f"❌ error in final_video: {e} ❌")
+        return False
     finally:
         # 7. CRUCIAL RESOURCE CLEANUP: 
         # The finally block runs even if the render crashes, forcing your Mac 
         # to unlock all the original scene video files.
         print("Cleaning up scene clips from memory...")
         for video in scenes:
-            video.close()
-        return str(output_file_path.resolve())
+            try:
+               video.close() 
+            except:
+                pass
+            
+    return str(output_file_path.resolve())
 

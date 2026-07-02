@@ -1,7 +1,7 @@
 # Youtube Video Automation 
 
 ## What This Does 
-- This Script generates ai daily news videos usually 20-30 mins long using real youtube videos clipped up that were uploaded in the last day, a free ai voice over, free stock images where needed to generate the news video for free then using grok to make a $0.02 thumbnail then auto uploads videos to youtube.
+- This Script generates ai daily news videos usually 20-30 mins long using real youtube videos clipped up that were uploaded in the last day, a free ai voice over, free stock images where needed to generate the news video for free then using grok to make a $0.02 thumbnail then auto uploads videos to youtube. then cuts upp videos over 30 mins in shorts and uploads them.
 
 - currently setup to upload a triathlon, cycling, ai, basketball news video but you can edit the **"topics"** in the main.py folder
 
@@ -20,6 +20,7 @@
 12. Generate meta data using google gemini for the youtube upload as well as use gemini to generate a thumbnail prompt which is then executed by grok imagine 
 13. Use authentication from step 1 to upload full video to youtube with title, description tags
 14. add s thumbnail to video automatically 90 seconds after upload 
+15. cuts all videos over 30 mins into shorts and uploads them
 
 ## How To Use
 
