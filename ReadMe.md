@@ -27,6 +27,9 @@
 ### audio
 - you must get a 40mins - 1 hour long background music track and name it background.mp3 in the main dir
 
+### Add Folders 
+- you must add directories audio_files, generated_images, news, ready_to_upload, script, video_clips, videos
+
 ### ENV Setup
 - GROK_KEY
 - GEMINI_API_KEY

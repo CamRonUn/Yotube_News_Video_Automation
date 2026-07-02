@@ -39,22 +39,24 @@ def make_both():
     print("starting make_both")
     print(topic1)
     youtube1 = authenticate_youtube()
+    
     print(topic2)
-    #youtube2 = authenticate_youtube()
+    youtube2 = authenticate_youtube()
+
     print(topicx)
-    #youtubex= authenticate_youtube()
+    youtubex= authenticate_youtube()
+
     print(topic3)
+    youtube3 = authenticate_youtube()
 
-    #youtube3 = authenticate_youtube()
     print(topic4)
+    youtube4 = authenticate_youtube()
 
-    #youtube4 = authenticate_youtube()
     print(topic5)
+    youtube5 = authenticate_youtube()
 
-    #youtube5 = authenticate_youtube()
     print(topic6)
-
-    #youtube6 = authenticate_youtube()
+    youtube6 = authenticate_youtube()
     ###main script to generate video 
 
     def makeShorts(youtube, topic):
@@ -138,18 +140,18 @@ def make_both():
     
     make_1(youtube1, topic1)
     makeShorts(youtube1, topic1)
-    #make_1(youtube2, topic2)
-    #makeShorts(youtube2, topic2)
-    #make_1(youtubex, topicx)
-    #makeShorts(youtubex, topicx)
-    #make_1(youtube3, topic3)
-    #makeShorts(youtube3, topic3)
-    #make_1(youtube4, topic4)
-    #makeShorts(youtube4, topic4)
-    #make_1(youtube5, topic5)
-    #makeShorts(youtube5, topic5)
-    #make_1(youtube6, topic6)
-    #makeShorts(youtube6, topic6)
+    make_1(youtube2, topic2)
+    makeShorts(youtube2, topic2)
+    make_1(youtubex, topicx)
+    makeShorts(youtubex, topicx)
+    make_1(youtube3, topic3)
+    makeShorts(youtube3, topic3)
+    make_1(youtube4, topic4)
+    makeShorts(youtube4, topic4)
+    make_1(youtube5, topic5)
+    makeShorts(youtube5, topic5)
+    make_1(youtube6, topic6)
+    makeShorts(youtube6, topic6)
     
 
 
